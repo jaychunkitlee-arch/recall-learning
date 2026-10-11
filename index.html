@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Recall Learning — Jay Lee</title>
+    <style>
+/* ── Recall Learning — dark-friendly, mobile-first ── */
+:root {
+  --bg: #0f1117;
+  --bg-elevated: #1a1d27;
+  --bg-card: #222633;
+  --bg-hover: #2a2f3d;
+  --border: #2e3345;
+  --text: #e8eaed;
+  --text-muted: #9aa0b0;
+  --text-dim: #6b7280;
+  --accent: #6c8cff;
+  --accent-hover: #8aa4ff;
+  --accent-soft: rgba(108, 140, 255, 0.15);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.15);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.15);
+  --warning: #fbbf24;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --transition: 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f6fa;
+    --bg-elevated: #ffffff;
+    --bg-card: #ffffff;
+    --bg-hover: #f0f1f5;
+    --border: #e2e4ec;
+    --text: #1a1d27;
+    --text-muted: #5c6378;
+    --text-dim: #8b90a0;
+    --accent: #4f6ef7;
+    --accent-hover: #3b5de7;
+    --accent-soft: rgba(79, 110, 247, 0.12);
+    --success: #059669;
+    --success-soft: rgba(5, 150, 105, 0.12);
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.1);
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* ── Layout ── */
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.header h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.header h1 span {
+  color: var(--accent);
+}
+
+.header-meta {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+/* ── Nav tabs ── */
+.nav {
+  display: flex;
+  gap: 0.35rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.3rem;
+  margin-bottom: 1.25rem;
+}
+
+.nav-btn {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+
+.nav-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.nav-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Topic chips ── */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 550;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  transition: all var(--transition);
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+/* ── Views ── */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+/* ── Progress bar strip ── */
+.progress-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--success);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+/* ── Flashcards ── */
+.card-stage {
+  perspective: 1000px;
+  margin-bottom: 1.25rem;
+}
+
+.flashcard {
+  position: relative;
+  width: 100%;
+  min-height: 240px;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+.flashcard.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+}
+
+.flashcard-face.back {
+  transform: rotateY(180deg);
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-elevated));
+}
+
+.face-label {
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+
+.face-topic {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.face-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  max-width: 90%;
+}
+
+.flashcard-face.back .face-text {
+  font-size: 0.95rem;
+  font-weight: 450;
+  color: var(--text-muted);
+}
+
+.tap-hint {
+  margin-top: 1rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.card-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  transition: all var(--transition);
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-success {
+  background: var(--success-soft);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.btn-danger {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.card-meta {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.known-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* ── Quiz ── */
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.quiz-score {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.quiz-question-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+}
+
+.quiz-topic {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.quiz-question {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  line-height: 1.45;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-option {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  font-size: 0.9rem;
+  transition: all var(--transition);
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.quiz-option.correct {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.quiz-option.wrong {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.quiz-option:disabled {
+  cursor: default;
+}
+
+.quiz-explanation {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: none;
+}
+
+.quiz-explanation.visible {
+  display: block;
+}
+
+.quiz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.quiz-done {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.quiz-done h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.quiz-done .big-score {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 0.75rem 0;
+}
+
+.quiz-done .best {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+/* ── Concepts browse ── */
+.concept-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.concept-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.35rem;
+  transition: border-color var(--transition);
+}
+
+.concept-card:hover {
+  border-color: var(--accent);
+}
+
+.concept-card h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.concept-card p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.concept-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.concept-stats span {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.concept-stats .known-count {
+  color: var(--success);
+  border-color: var(--success);
+  background: var(--success-soft);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .app {
+    padding: 0.75rem 0.75rem 2.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.15rem;
+  }
+
+  .flashcard {
+    min-height: 200px;
+  }
+
+  .face-text {
+    font-size: 1rem;
+  }
+
+  .nav-btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.4rem;
+  }
+}
+
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <header class="header">
+        <h1>Recall <span>Learning</span></h1>
+        <div class="header-meta" id="header-meta"></div>
+      </header>
+
+      <nav class="nav" aria-label="Modes">
+        <button type="button" class="nav-btn active" data-view="concepts">Concepts</button>
+        <button type="button" class="nav-btn" data-view="flashcards">Flashcards</button>
+        <button type="button" class="nav-btn" data-view="quiz">Quiz</button>
+      </nav>
+
+      <div class="filters" id="filters" aria-label="Topic filter"></div>
+
+      <main>
+        <section class="view active" id="view-concepts" aria-label="Concepts browse"></section>
+        <section class="view" id="view-flashcards" aria-label="Flashcards"></section>
+        <section class="view" id="view-quiz" aria-label="Quiz"></section>
+      </main>
+
+      <footer class="footer">
+        Daily play/review from Recall notes · Progress saved in this browser
+      </footer>
+    </div>
+
+    <script>
+/**
+ * LEARNING_DATA — Recall-derived content for Jay Lee Learning Database.
+ * Schema (task): topics{id,nameZh,nameEn,summary,relatedCardTitles},
+ *   flashcards{id,topicId,front,back}, quiz{id,topicId,question,choices,answerIndex,explain}
+ * Compat aliases for app.js scaffold: topic.name; quiz.options/correctIndex/explanation
+ */
+window.LEARNING_DATA = {
+  "topics": [
+    {
+      "id": "rates",
+      "nameZh": "利率：何时加息/降息",
+      "nameEn": "Rates — when to raise/cut",
+      "summary": "Policy rates are the main price tool for aggregate demand: hiking raises borrowing costs and discount rates; cutting eases them. Watch real rates (nominal minus expected inflation) and the full financial-conditions package, not the headline policy rate alone. Japan’s move toward ~1.25% is framed in Jay’s note as normalization after CPI near 2%, not primarily an FX-defense hike.",
+      "relatedCardTitles": [
+        "关于利率，你需要知道的那些事儿",
+        "美元开启降息周期了，所以呢?",
+        "特朗普打算怎么干美联储",
+        "一口气了解美联储",
+        "宏觀經濟與全球債務、量化寬鬆（QE）底層邏輯"
+      ],
+      "name": "利率：何时加息/降息 · Rates — when to raise/cut"
+    },
+    {
+      "id": "fx-jpy",
+      "nameZh": "汇率与日元为何偏弱",
+      "nameEn": "FX / why JPY falls",
+      "summary": "FX is a relative price driven short-term by capital flows and risk appetite, longer-term by inflation, productivity, and external balances. Yen weakness often tracks wide US–Japan rate differentials and carry trades. Japan’s debt bind limits how fast BOJ can tighten, so modest hikes may not reverse USD/JPY by themselves.",
+      "relatedCardTitles": [
+        "债务缠绕 日加息难扭圆汇弱势",
+        "日元崩盘，日本国债闪崩的背后",
+        "日元历史性加息，意味着什么？",
+        "一口气了解外汇",
+        "汇率为什么涨跌 | 美元跌宕50年",
+        "美元暴跌的背后",
+        "人民币升值，对中国老百姓是好事吗？"
+      ],
+      "name": "汇率与日元为何偏弱 · FX / why JPY falls"
+    },
+    {
+      "id": "inflation",
+      "nameZh": "通胀类型与工资物价",
+      "nameEn": "Inflation types & wage–price",
+      "summary": "Separate demand-pull (too much spending) from cost-push (input shocks, FX-imported costs) before choosing the policy story. Wage–price feedback (春鬥 in Japan) matters when raises become broad and persistent versus one-off catch-up. Japan’s CPI path to ~2% is the hinge for regime change in Jay’s own note.",
+      "relatedCardTitles": [
+        "一口气了解通货膨胀",
+        "宏觀經濟與全球債務、量化寬鬆（QE）底層邏輯"
+      ],
+      "name": "通胀类型与工资物价 · Inflation types & wage–price"
+    },
+    {
+      "id": "money-qe",
+      "nameZh": "货币创造与 QE 底层逻辑",
+      "nameEn": "Money creation / QE logic",
+      "summary": "Distinguish central-bank reserves from bank-deposit money. QE swaps longer assets for reserves, easing financial conditions and lifting asset prices; it is not helicopter cash. Bank capital, loan demand, and regulation decide whether extra reserves become credit growth—core of Jay’s QE + global-debt note.",
+      "relatedCardTitles": [
+        "宏觀經濟與全球債務、量化寬鬆（QE）底層邏輯",
+        "一口气了解银行游戏规则 中美银行体系",
+        "揭秘美元霸权与美联储"
+      ],
+      "name": "货币创造与 QE 底层逻辑 · Money creation / QE logic"
+    },
+    {
+      "id": "debt-fiscal",
+      "nameZh": "债务与财政约束",
+      "nameEn": "Debt & fiscal constraints",
+      "summary": "High public debt shrinks the politically and market-feasible rate path: each hike raises interest expense and can shock long bonds. Japan’s debt tangle links BOJ normalization, JGB volatility, and yen pressure into one constraint set. QE postponed the bill; it did not delete the stock of debt.",
+      "relatedCardTitles": [
+        "宏觀經濟與全球債務、量化寬鬆（QE）底層邏輯",
+        "债务缠绕 日加息难扭圆汇弱势",
+        "日元崩盘，日本国债闪崩的背后"
+      ],
+      "name": "债务与财政约束 · Debt & fiscal constraints"
+    },
+    {
+      "id": "japan",
+      "nameZh": "日本：宏观模板",
+      "nameEn": "Japan as macro template",
+      "summary": "Bubble → balance-sheet repair → decades of low inflation and ultra-easy policy form the template. Exit attempts hinge on CPI near 2%, wage talks (春鬥), and careful normalization toward ~1.25% policy rates—with FX and JGB volatility as side constraints, not the whole objective function.",
+      "relatedCardTitles": [
+        "20分钟详解日本经济泡沫",
+        "日本经济失落的三十年",
+        "日元历史性加息，意味着什么？",
+        "债务缠绕 日加息难扭圆汇弱势",
+        "日元崩盘，日本国债闪崩的背后",
+        "宏觀經濟與全球債務、量化寬鬆（QE）底層邏輯"
+      ],
+      "name": "日本：宏观模板 · Japan as macro template"
+    },
+    {
+      "id": "dollar-trade",
+      "nameZh": "美元体系与贸易",
+      "nameEn": "Dollar system & trade",
+      "summary": "The dollar’s reserve and funding role transmits Fed cycles worldwide. A US cutting cycle changes global financial conditions only if real rates, the dollar index, and risk appetite move together. Trade and geopolitics cards sit inside this dollar network, not outside it.",
+      "relatedCardTitles": [
+        "揭秘美元霸权与美联储",
+        "美元开启降息周期了，所以呢?",
+        "汇率为什么涨跌 | 美元跌宕50年",
+        "美元暴跌的背后"
+      ],
+      "name": "美元体系与贸易 · Dollar system & trade"
+    },
+    {
+      "id": "bubbles",
+      "nameZh": "泡沫与信贷过剩",
+      "nameEn": "Bubbles / credit excess",
+      "summary": "Bubbles need cheap credit, self-reinforcing prices, and leverage/narrative. Japan’s property–equity bubble and aftermath show how cleaning up bad debt forces long easy policy and fiscal strain. Price level alone is not the definition—leverage and solvency assumptions are.",
+      "relatedCardTitles": [
+        "20分钟详解日本经济泡沫",
+        "日本经济失落的三十年",
+        "宏觀經濟與全球債務、量化寬鬆（QE）底層邏輯"
+      ],
+      "name": "泡沫与信贷过剩 · Bubbles / credit excess"
+    },
+    {
+      "id": "reading-economy",
+      "nameZh": "如何读懂一个经济体",
+      "nameEn": "How to read an economy",
+      "summary": "GDP is a flow snapshot—pair it with labor, inflation composition, demographics, institutions, and the external balance. Aging (Recall demographics cards) shifts saving–investment and fiscal space; Japan illustrates the slow burn. Read in order: gap → inflation type → policy → debt constraint → external/demographics.",
+      "relatedCardTitles": [
+        "一口气了解通货膨胀",
+        "一口气了解美联储",
+        "一口气了解银行游戏规则 中美银行体系",
+        "日本经济失落的三十年"
+      ],
+      "name": "如何读懂一个经济体 · How to read an economy"
+    },
+    {
+      "id": "market-structure",
+      "nameZh": "市场结构 vs 宏观",
+      "nameEn": "Market structure vs macro",
+      "summary": "Macro sets the regime; market structure (margin, credit events, listing supply, stablecoin redeemability) sets amplification. A single credit event can spike volatility without proving a recession. Keep Elliott/JK tactics on a separate track.",
+      "relatedCardTitles": [],
+      "name": "市场结构 vs 宏观 · Market structure vs macro"
+    },
+    {
+      "id": "jk-elliott",
+      "nameZh": "JK / 波浪理論（独立轨道）",
+      "nameEn": "JK & Elliott (separate track)",
+      "summary": "JK QnA covers execution tactics: shorts vs longs, margin, mindset (气概), volume, ES vs SPX, and wave counting as risk-framed probability. Elliott summary: form > magnitude > time; 5 up / 3 down; wave 3 often ~1.618× wave 1 and not the shortest; wave 4 should not overlap wave 1; Fib + complex corrections (Z vs W) and 黄金共振 as reaction zones—not macro causality.",
+      "relatedCardTitles": [
+        "JK QnA",
+        "波浪理論重點總結"
+      ],
+      "name": "JK / 波浪理論（独立轨道） · JK & Elliott (separate track)"
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "fc-qe-01",
+      "topicId": "money-qe",
+      "front": "QE 直接增加的是什么？／What does QE directly add?",
+      "back": "央行准备金 + 央行资产负债表扩张（用准备金换长久期资产）。不是直接给居民发钞。／Reserves and a larger CB balance sheet via asset purchases—not helicopter cash to households."
+    },
+    {
+      "id": "fc-qe-02",
+      "topicId": "money-qe",
+      "front": "为何准备金↑≠信贷自动↑？",
+      "back": "现代银行放贷受资本、监管与贷款需求约束；货币乘数不是自动机。中美银行规则差异会改变弹性。"
+    },
+    {
+      "id": "fc-inf-01",
+      "topicId": "inflation",
+      "front": "Demand-pull vs cost-push",
+      "back": "Demand-pull: 总需求过热追逐商品。Cost-push: 能源/工资/供应链/贬值推高成本，即便需求不热也可能涨价。政策含义不同。"
+    },
+    {
+      "id": "fc-inf-02",
+      "topicId": "inflation",
+      "front": "春鬥 / wage–price loop 何时值得警惕？",
+      "back": "当加薪变得广谱、持续、超过生产率，并反馈进定价与通胀预期时——而非一次性追赶涨薪。"
+    },
+    {
+      "id": "fc-rates-01",
+      "topicId": "rates",
+      "front": "实际利率 ≈ ?",
+      "back": "名义利率 − 预期通胀。名义利率不动而预期通胀升 → 实际利率下降（变相宽松）。"
+    },
+    {
+      "id": "fc-rates-02",
+      "topicId": "rates",
+      "front": "BOJ ~1.25% 加息叙事（Jay own note）",
+      "back": "主因：通胀达到约 2% 后的正常化。不是“主要为了保卫日元才加息”；汇价是约束与后果。"
+    },
+    {
+      "id": "fc-fx-01",
+      "topicId": "fx-jpy",
+      "front": "为何日美利差偏阔常压日元？",
+      "back": "套息：借低息日元买高息资产 → 卖出日元。利差不收窄，加息绝对值偏低也难趋势性扭转向。"
+    },
+    {
+      "id": "fc-fx-02",
+      "topicId": "fx-jpy",
+      "front": "「债务缠绕」对日元政策意味着什么？",
+      "back": "债高限制激进加息；加太快伤财政/JGB，加太慢利差难收 → 护汇与债市稳定互相牵扯。"
+    },
+    {
+      "id": "fc-debt-01",
+      "topicId": "debt-fiscal",
+      "front": "高债务如何约束加息？",
+      "back": "利息支出更敏感；长端抛压与“闪崩”风险上升。QE 改变持有结构，不删除债务存量。"
+    },
+    {
+      "id": "fc-jp-01",
+      "topicId": "japan",
+      "front": "日本宏观模板三阶段？",
+      "back": "泡沫信贷扩张 → 资产负债表修复/失落三十年 → 超宽松后通胀回近 2%、尝试有限正常化。"
+    },
+    {
+      "id": "fc-jp-02",
+      "topicId": "japan",
+      "front": "弱日元对日本是纯利好吗？",
+      "back": "否。出口商受益；进口成本↑、实质工资承压。是部门再分配，并可通过进口物价喂通胀。"
+    },
+    {
+      "id": "fc-dol-01",
+      "topicId": "dollar-trade",
+      "front": "为何读任何 FX 都要问美元？",
+      "back": "美元是全球计价/融资货币；美联储周期外溢到利差、美元指数与风险偏好，构成交叉盘的另一半。"
+    },
+    {
+      "id": "fc-bub-01",
+      "topicId": "bubbles",
+      "front": "泡沫的关键不是“贵”而是？",
+      "back": "廉价信贷 + 价格自我强化 + 杠杆/偿付假设（“这次不同”）。日本地产股市泡沫是模板。"
+    },
+    {
+      "id": "fc-read-01",
+      "topicId": "reading-economy",
+      "front": "读经济建议顺序？",
+      "back": "增长缺口 → 通胀类型 → 政策立场 → 财政/债务约束 → 外部账户与人口/制度。"
+    },
+    {
+      "id": "fc-jk-01",
+      "topicId": "jk-elliott",
+      "front": "Elliott 优先级？",
+      "back": "形态 form > 幅度 magnitude > 时间 time。"
+    },
+    {
+      "id": "fc-jk-02",
+      "topicId": "jk-elliott",
+      "front": "Wave 3 与 Wave 4 关键规则",
+      "back": "Wave 3 常约 1.618× wave1，且不能是最短推动浪；Wave 4 价格不与 wave1 重叠（标准推动浪）。"
+    },
+    {
+      "id": "fc-jk-03",
+      "topicId": "jk-elliott",
+      "front": "为何交易用 ES 多于 SPX？",
+      "back": "期货合约流动性与执行适合短线；点值/保证金结构与现货指数不同。JK：ES not SPX。"
+    }
+  ],
+  "quiz": [
+    {
+      "id": "qz-qe-01",
+      "topicId": "money-qe",
+      "question": "QE 的直接操作最准确的是？",
+      "choices": [
+        "向全体居民发钞",
+        "买入长久期资产并注入准备金",
+        "强制银行提高贷款利率",
+        "提高法定准备金率"
+      ],
+      "answerIndex": 1,
+      "explain": "QE = 资产购买 → 准备金↑、长端承压/金融条件宽松；不是直升机现金。",
+      "options": [
+        "向全体居民发钞",
+        "买入长久期资产并注入准备金",
+        "强制银行提高贷款利率",
+        "提高法定准备金率"
+      ],
+      "correctIndex": 1,
+      "explanation": "QE = 资产购买 → 准备金↑、长端承压/金融条件宽松；不是直升机现金。"
+    },
+    {
+      "id": "qz-qe-02",
+      "topicId": "money-qe",
+      "question": "准备金增加后信贷不一定同步扩张，主要因为？",
+      "choices": [
+        "货币乘数永远固定为 10",
+        "资本、需求与监管约束银行放贷",
+        "央行禁止一切贷款",
+        "只有现金才算货币"
+      ],
+      "answerIndex": 1,
+      "explain": "现代信贷受资本充足、借款需求与监管约束；乘数不是自动机。",
+      "options": [
+        "货币乘数永远固定为 10",
+        "资本、需求与监管约束银行放贷",
+        "央行禁止一切贷款",
+        "只有现金才算货币"
+      ],
+      "correctIndex": 1,
+      "explanation": "现代信贷受资本充足、借款需求与监管约束；乘数不是自动机。"
+    },
+    {
+      "id": "qz-inf-01",
+      "topicId": "inflation",
+      "question": "Cost-push inflation 的典型驱动是？",
+      "choices": [
+        "仅有超额总需求",
+        "投入成本上升（能源、供应链、贬值等）",
+        "央行保密会议",
+        "失业率降到零"
+      ],
+      "answerIndex": 1,
+      "explain": "成本推动来自供给/投入端；与 demand-pull 过热不同。",
+      "options": [
+        "仅有超额总需求",
+        "投入成本上升（能源、供应链、贬值等）",
+        "央行保密会议",
+        "失业率降到零"
+      ],
+      "correctIndex": 1,
+      "explanation": "成本推动来自供给/投入端；与 demand-pull 过热不同。"
+    },
+    {
+      "id": "qz-inf-02",
+      "topicId": "inflation",
+      "question": "按 Jay own note，日本具备加息正常化叙事的关键锚是？",
+      "choices": [
+        "仅为了让日元立刻翻倍",
+        "通胀路径接近约 2%（配合工资谈判观察）",
+        "取消全部国债",
+        "出口降到零"
+      ],
+      "answerIndex": 1,
+      "explain": "CPI≈2% 是正常化正当性；护汇不是唯一目标函数。",
+      "options": [
+        "仅为了让日元立刻翻倍",
+        "通胀路径接近约 2%（配合工资谈判观察）",
+        "取消全部国债",
+        "出口降到零"
+      ],
+      "correctIndex": 1,
+      "explanation": "CPI≈2% 是正常化正当性；护汇不是唯一目标函数。"
+    },
+    {
+      "id": "qz-rates-01",
+      "topicId": "rates",
+      "question": "名义政策利率不变、预期通胀上升时，实际利率？",
+      "choices": [
+        "上升",
+        "下降",
+        "不变",
+        "变为无穷"
+      ],
+      "answerIndex": 1,
+      "explain": "实际利率 ≈ 名义 − 预期通胀。",
+      "options": [
+        "上升",
+        "下降",
+        "不变",
+        "变为无穷"
+      ],
+      "correctIndex": 1,
+      "explanation": "实际利率 ≈ 名义 − 预期通胀。"
+    },
+    {
+      "id": "qz-rates-02",
+      "topicId": "rates",
+      "question": "降息一定利好风险资产吗？",
+      "choices": [
+        "一定，永远如此",
+        "不一定：若因衰退恐慌，盈利下修可盖过估值扩张",
+        "只利好黄金",
+        "只利好现金"
+      ],
+      "answerIndex": 1,
+      "explain": "要区分“预防式宽松”与“衰退式宽松”。",
+      "options": [
+        "一定，永远如此",
+        "不一定：若因衰退恐慌，盈利下修可盖过估值扩张",
+        "只利好黄金",
+        "只利好现金"
+      ],
+      "correctIndex": 1,
+      "explanation": "要区分“预防式宽松”与“衰退式宽松”。"
+    },
+    {
+      "id": "qz-fx-01",
+      "topicId": "fx-jpy",
+      "question": "经典日元套息（carry）是？",
+      "choices": [
+        "借美元买日元资产",
+        "借低息日元配置高息资产",
+        "只做多日股不开汇",
+        "央行强制锁汇"
+      ],
+      "answerIndex": 1,
+      "explain": "Borrow JPY, invest higher-yielding assets; unwind when JPY spikes.",
+      "options": [
+        "借美元买日元资产",
+        "借低息日元配置高息资产",
+        "只做多日股不开汇",
+        "央行强制锁汇"
+      ],
+      "correctIndex": 1,
+      "explanation": "Borrow JPY, invest higher-yielding assets; unwind when JPY spikes."
+    },
+    {
+      "id": "qz-fx-02",
+      "topicId": "fx-jpy",
+      "question": "BOJ 小幅加息后日元仍可能偏弱，因为？",
+      "choices": [
+        "汇率与利率无关",
+        "相对美债利差与套息存量可能仍偏阔",
+        "日本禁止资本流动",
+        "美元已废除"
+      ],
+      "answerIndex": 1,
+      "explain": "看相对利差与头寸，不只看日本绝对利率水平。",
+      "options": [
+        "汇率与利率无关",
+        "相对美债利差与套息存量可能仍偏阔",
+        "日本禁止资本流动",
+        "美元已废除"
+      ],
+      "correctIndex": 1,
+      "explanation": "看相对利差与头寸，不只看日本绝对利率水平。"
+    },
+    {
+      "id": "qz-debt-01",
+      "topicId": "debt-fiscal",
+      "question": "高国债余额对货币政策的主要含义是？",
+      "choices": [
+        "可以无限激进加息无副作用",
+        "利息支出与债市波动成为硬约束，正常化需更渐进",
+        "债务自动消失",
+        "汇率不再波动"
+      ],
+      "answerIndex": 1,
+      "explain": "Debt bind ties rate path to fiscal cost and JGB volatility.",
+      "options": [
+        "可以无限激进加息无副作用",
+        "利息支出与债市波动成为硬约束，正常化需更渐进",
+        "债务自动消失",
+        "汇率不再波动"
+      ],
+      "correctIndex": 1,
+      "explanation": "Debt bind ties rate path to fiscal cost and JGB volatility."
+    },
+    {
+      "id": "qz-jp-01",
+      "topicId": "japan",
+      "question": "把日本当作宏观模板，正确的学习用法是？",
+      "choices": [
+        "只看动漫与旅游",
+        "追踪泡沫→失落→超宽松→通胀回2%尝试退出的完整因果链",
+        "假设与别国零可比性",
+        "只背 GDP 一个数字"
+      ],
+      "answerIndex": 1,
+      "explain": "Japan is a lab for high debt, aging, and ultra-easy exit problems.",
+      "options": [
+        "只看动漫与旅游",
+        "追踪泡沫→失落→超宽松→通胀回2%尝试退出的完整因果链",
+        "假设与别国零可比性",
+        "只背 GDP 一个数字"
+      ],
+      "correctIndex": 1,
+      "explanation": "Japan is a lab for high debt, aging, and ultra-easy exit problems."
+    },
+    {
+      "id": "qz-dol-01",
+      "topicId": "dollar-trade",
+      "question": "美联储降息周期对全球的影响取决于？",
+      "choices": [
+        "只取决于是否降息公告本身",
+        "实际利率、美元指数与风险偏好是否同步变化",
+        "只取决于黄金产量",
+        "与他国无关"
+      ],
+      "answerIndex": 1,
+      "explain": "「所以呢?」要问外溢条件，而非标题党。",
+      "options": [
+        "只取决于是否降息公告本身",
+        "实际利率、美元指数与风险偏好是否同步变化",
+        "只取决于黄金产量",
+        "与他国无关"
+      ],
+      "correctIndex": 1,
+      "explanation": "「所以呢?」要问外溢条件，而非标题党。"
+    },
+    {
+      "id": "qz-bub-01",
+      "topicId": "bubbles",
+      "question": "识别泡沫更关键的是？",
+      "choices": [
+        "价格绝对值单一指标",
+        "信贷/杠杆与“这次不同”叙事是否自我强化",
+        "央行行长姓氏",
+        "是否有股票代码"
+      ],
+      "answerIndex": 1,
+      "explain": "Leverage and narrative matter more than “price feels high.”",
+      "options": [
+        "价格绝对值单一指标",
+        "信贷/杠杆与“这次不同”叙事是否自我强化",
+        "央行行长姓氏",
+        "是否有股票代码"
+      ],
+      "correctIndex": 1,
+      "explanation": "Leverage and narrative matter more than “price feels high.”"
+    },
+    {
+      "id": "qz-jk-01",
+      "topicId": "jk-elliott",
+      "question": "Elliott 推动浪中，关于 wave 3 的标准说法是？",
+      "choices": [
+        "必须是最短的浪",
+        "通常最长，常约 1.618× wave1，且不应是最短推动浪",
+        "必须等于 wave1",
+        "只由时间决定"
+      ],
+      "answerIndex": 1,
+      "explain": "Form > magnitude > time; wave 3 not the shortest.",
+      "options": [
+        "必须是最短的浪",
+        "通常最长，常约 1.618× wave1，且不应是最短推动浪",
+        "必须等于 wave1",
+        "只由时间决定"
+      ],
+      "correctIndex": 1,
+      "explanation": "Form > magnitude > time; wave 3 not the shortest."
+    },
+    {
+      "id": "qz-jk-02",
+      "topicId": "jk-elliott",
+      "question": "标准推动浪中 wave 4 的价格规则？",
+      "choices": [
+        "必须完全重叠 wave1",
+        "不与 wave1 价格重叠",
+        "必须长于 wave2 三倍时间",
+        "取消 Fib"
+      ],
+      "answerIndex": 1,
+      "explain": "No overlap of wave 4 with wave 1 in a standard impulse.",
+      "options": [
+        "必须完全重叠 wave1",
+        "不与 wave1 价格重叠",
+        "必须长于 wave2 三倍时间",
+        "取消 Fib"
+      ],
+      "correctIndex": 1,
+      "explanation": "No overlap of wave 4 with wave 1 in a standard impulse."
+    }
+  ]
+};
+
+    </script>
+    <script>
+/**
+ * Recall Learning — flashcards, quiz, concepts browse
+ * Progress persisted in localStorage under key "recall-learning-progress"
+ */
+(function () {
+  "use strict";
+
+  const STORAGE_KEY = "recall-learning-progress";
+  const data = window.LEARNING_DATA;
+  if (!data || !data.topics || !data.flashcards || !data.quiz) {
+    document.body.innerHTML =
+      "<p style='padding:2rem;font-family:sans-serif'>Missing LEARNING_DATA. Load data.js before app.js.</p>";
+    return;
+  }
+
+  /* ── State ── */
+  const state = {
+    view: "concepts", // concepts | flashcards | quiz
+    topicFilter: "all",
+    // flashcards
+    fcOrder: [],
+    fcIndex: 0,
+    fcFlipped: false,
+    // quiz
+    qzOrder: [],
+    qzIndex: 0,
+    qzAnswered: false,
+    qzSelected: null,
+    qzCorrect: 0,
+    qzDone: false,
+  };
+
+  /* ── Progress (localStorage) ── */
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        return {
+          knownCards: Array.isArray(p.knownCards) ? p.knownCards : [],
+          quizBest: typeof p.quizBest === "object" && p.quizBest ? p.quizBest : {},
+        };
+      }
+    } catch (_) {}
+    return { knownCards: [], quizBest: {} };
+  }
+
+  function saveProgress(progress) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } catch (_) {}
+  }
+
+  let progress = loadProgress();
+
+  function isKnown(id) {
+    return progress.knownCards.includes(id);
+  }
+
+  function setKnown(id, known) {
+    const set = new Set(progress.knownCards);
+    if (known) set.add(id);
+    else set.delete(id);
+    progress.knownCards = [...set];
+    saveProgress(progress);
+  }
+
+  function quizBestKey(filter) {
+    return filter || "all";
+  }
+
+  function getQuizBest(filter) {
+    return progress.quizBest[quizBestKey(filter)] || 0;
+  }
+
+  function setQuizBest(filter, score) {
+    const key = quizBestKey(filter);
+    const prev = progress.quizBest[key] || 0;
+    if (score > prev) {
+      progress.quizBest[key] = score;
+      saveProgress(progress);
+    }
+  }
+
+  /* ── Helpers ── */
+  function topicById(id) {
+    return data.topics.find((t) => t.id === id);
+  }
+
+  function filteredFlashcards() {
+    if (state.topicFilter === "all") return data.flashcards.slice();
+    return data.flashcards.filter((c) => c.topicId === state.topicFilter);
+  }
+
+  function filteredQuiz() {
+    if (state.topicFilter === "all") return data.quiz.slice();
+    return data.quiz.filter((q) => q.topicId === state.topicFilter);
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function $(sel, root) {
+    return (root || document).querySelector(sel);
+  }
+
+  function $$(sel, root) {
+    return [...(root || document).querySelectorAll(sel)];
+  }
+
+  /* ── Init flashcard / quiz decks ── */
+  function resetFlashcards(doShuffle) {
+    const cards = filteredFlashcards();
+    state.fcOrder = doShuffle ? shuffle(cards.map((c) => c.id)) : cards.map((c) => c.id);
+    state.fcIndex = 0;
+    state.fcFlipped = false;
+  }
+
+  function resetQuiz(doShuffle) {
+    const qs = filteredQuiz();
+    state.qzOrder = doShuffle ? shuffle(qs.map((q) => q.id)) : qs.map((q) => q.id);
+    state.qzIndex = 0;
+    state.qzAnswered = false;
+    state.qzSelected = null;
+    state.qzCorrect = 0;
+    state.qzDone = false;
+  }
+
+  function currentCard() {
+    const id = state.fcOrder[state.fcIndex];
+    return data.flashcards.find((c) => c.id === id);
+  }
+
+  function currentQuestion() {
+    const id = state.qzOrder[state.qzIndex];
+    return data.quiz.find((q) => q.id === id);
+  }
+
+  /* ── Render: chips ── */
+  function renderChips() {
+    const el = $("#filters");
+    const topics = [{ id: "all", name: "All" }, ...data.topics];
+    el.innerHTML = topics
+      .map(
+        (t) =>
+          `<button type="button" class="chip${state.topicFilter === t.id ? " active" : ""}" data-topic="${t.id}">${escapeHtml(t.name)}</button>`
+      )
+      .join("");
+  }
+
+  /* ── Render: concepts ── */
+  function renderConcepts() {
+    const el = $("#view-concepts");
+    const topics =
+      state.topicFilter === "all"
+        ? data.topics
+        : data.topics.filter((t) => t.id === state.topicFilter);
+
+    if (!topics.length) {
+      el.innerHTML = '<div class="empty-state">No topics match this filter.</div>';
+      return;
+    }
+
+    el.innerHTML =
+      '<div class="concept-grid">' +
+      topics
+        .map((t) => {
+          const fc = data.flashcards.filter((c) => c.topicId === t.id);
+          const qz = data.quiz.filter((q) => q.topicId === t.id);
+          const known = fc.filter((c) => isKnown(c.id)).length;
+          return `
+          <article class="concept-card">
+            <h3>${escapeHtml(t.name)}</h3>
+            <p>${escapeHtml(t.summary)}</p>
+            <div class="concept-stats">
+              <span>${fc.length} flashcard${fc.length !== 1 ? "s" : ""}</span>
+              <span>${qz.length} quiz</span>
+              ${fc.length ? `<span class="known-count">${known}/${fc.length} known</span>` : ""}
+            </div>
+          </article>`;
+        })
+        .join("") +
+      "</div>";
+  }
+
+  /* ── Render: flashcards ── */
+  function renderFlashcards() {
+    const el = $("#view-flashcards");
+    const total = state.fcOrder.length;
+
+    if (!total) {
+      el.innerHTML = '<div class="empty-state">No flashcards for this topic.</div>';
+      return;
+    }
+
+    const card = currentCard();
+    if (!card) {
+      el.innerHTML = '<div class="empty-state">Card not found.</div>';
+      return;
+    }
+
+    const topic = topicById(card.topicId);
+    const known = isKnown(card.id);
+    const knownCount = state.fcOrder.filter((id) => isKnown(id)).length;
+    const pct = Math.round((knownCount / total) * 100);
+
+    el.innerHTML = `
+      <div class="progress-strip">
+        <span>${knownCount}/${total} known</span>
+        <div class="progress-bar"><span style="width:${pct}%"></span></div>
+      </div>
+      <div class="card-stage">
+        <div class="flashcard${state.fcFlipped ? " flipped" : ""}" id="flashcard" role="button" tabindex="0" aria-label="Flip card">
+          <div class="flashcard-face front">
+            <div class="face-label">Concept</div>
+            <div class="face-topic">${escapeHtml(topic ? topic.name : "")}</div>
+            <div class="face-text">${escapeHtml(card.front)}</div>
+            <div class="tap-hint">Tap to flip</div>
+          </div>
+          <div class="flashcard-face back">
+            <div class="face-label">Explanation</div>
+            <div class="face-topic">${escapeHtml(topic ? topic.name : "")}</div>
+            <div class="face-text">${escapeHtml(card.back)}</div>
+            <div class="tap-hint">Tap to flip back</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-controls">
+        <button type="button" class="btn" id="fc-prev" ${state.fcIndex === 0 ? "disabled" : ""}>← Prev</button>
+        <button type="button" class="btn btn-danger" id="fc-unknown">Unknown</button>
+        <button type="button" class="btn btn-success" id="fc-known">Known ✓</button>
+        <button type="button" class="btn" id="fc-next" ${state.fcIndex >= total - 1 ? "disabled" : ""}>Next →</button>
+      </div>
+      <div class="card-controls">
+        <button type="button" class="btn btn-ghost" id="fc-shuffle">Shuffle</button>
+        <button type="button" class="btn btn-ghost" id="fc-flip">Flip</button>
+      </div>
+      <div class="card-meta">
+        ${state.fcIndex + 1} / ${total}
+        ${known ? '<span class="known-badge">Known</span>' : ""}
+      </div>`;
+
+    $("#flashcard").addEventListener("click", flipCard);
+    $("#flashcard").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        flipCard();
+      }
+    });
+    $("#fc-prev").addEventListener("click", () => {
+      if (state.fcIndex > 0) {
+        state.fcIndex--;
+        state.fcFlipped = false;
+        renderFlashcards();
+      }
+    });
+    $("#fc-next").addEventListener("click", () => {
+      if (state.fcIndex < total - 1) {
+        state.fcIndex++;
+        state.fcFlipped = false;
+        renderFlashcards();
+      }
+    });
+    $("#fc-known").addEventListener("click", () => {
+      setKnown(card.id, true);
+      if (state.fcIndex < total - 1) {
+        state.fcIndex++;
+        state.fcFlipped = false;
+      }
+      renderFlashcards();
+    });
+    $("#fc-unknown").addEventListener("click", () => {
+      setKnown(card.id, false);
+      if (state.fcIndex < total - 1) {
+        state.fcIndex++;
+        state.fcFlipped = false;
+      }
+      renderFlashcards();
+    });
+    $("#fc-shuffle").addEventListener("click", () => {
+      resetFlashcards(true);
+      renderFlashcards();
+    });
+    $("#fc-flip").addEventListener("click", flipCard);
+  }
+
+  function flipCard() {
+    state.fcFlipped = !state.fcFlipped;
+    const fc = $("#flashcard");
+    if (fc) fc.classList.toggle("flipped", state.fcFlipped);
+  }
+
+  /* ── Render: quiz ── */
+  function renderQuiz() {
+    const el = $("#view-quiz");
+    const total = state.qzOrder.length;
+
+    if (!total) {
+      el.innerHTML = '<div class="empty-state">No quiz questions for this topic.</div>';
+      return;
+    }
+
+    if (state.qzDone) {
+      const pct = Math.round((state.qzCorrect / total) * 100);
+      setQuizBest(state.topicFilter, state.qzCorrect);
+      const best = getQuizBest(state.topicFilter);
+      el.innerHTML = `
+        <div class="quiz-done">
+          <h2>Quiz complete</h2>
+          <div class="big-score">${state.qzCorrect}/${total}</div>
+          <p>${pct}% correct</p>
+          <p class="best">Best for this filter: ${best}/${total}</p>
+          <button type="button" class="btn btn-primary" id="qz-restart">Restart</button>
+        </div>`;
+      $("#qz-restart").addEventListener("click", () => {
+        resetQuiz(true);
+        renderQuiz();
+      });
+      return;
+    }
+
+    const q = currentQuestion();
+    if (!q) {
+      el.innerHTML = '<div class="empty-state">Question not found.</div>';
+      return;
+    }
+
+    const topic = topicById(q.topicId);
+    const best = getQuizBest(state.topicFilter);
+
+    el.innerHTML = `
+      <div class="quiz-header">
+        <span>Question ${state.qzIndex + 1} of ${total}</span>
+        <span>Score: <span class="quiz-score">${state.qzCorrect}</span> · Best: ${best}</span>
+      </div>
+      <div class="quiz-question-card">
+        <div class="quiz-topic">${escapeHtml(topic ? topic.name : "")}</div>
+        <div class="quiz-question">${escapeHtml(q.question)}</div>
+        <div class="quiz-options" id="qz-options">
+          ${q.options
+            .map((opt, i) => {
+              let cls = "quiz-option";
+              if (state.qzAnswered) {
+                if (i === q.correctIndex) cls += " correct";
+                else if (i === state.qzSelected) cls += " wrong";
+              }
+              return `<button type="button" class="${cls}" data-idx="${i}" ${state.qzAnswered ? "disabled" : ""}>${escapeHtml(opt)}</button>`;
+            })
+            .join("")}
+        </div>
+        <div class="quiz-explanation${state.qzAnswered && q.explanation ? " visible" : ""}" id="qz-explain">
+          ${state.qzAnswered && q.explanation ? escapeHtml(q.explanation) : ""}
+        </div>
+      </div>
+      <div class="quiz-actions">
+        ${
+          state.qzAnswered
+            ? `<button type="button" class="btn btn-primary" id="qz-next">${state.qzIndex >= total - 1 ? "See results" : "Next question"}</button>`
+            : ""
+        }
+        <button type="button" class="btn btn-ghost" id="qz-restart">Restart</button>
+      </div>`;
+
+    if (!state.qzAnswered) {
+      $$("#qz-options .quiz-option").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.idx);
+          state.qzSelected = idx;
+          state.qzAnswered = true;
+          if (idx === q.correctIndex) state.qzCorrect++;
+          renderQuiz();
+        });
+      });
+    }
+
+    const nextBtn = $("#qz-next");
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        if (state.qzIndex >= total - 1) {
+          state.qzDone = true;
+        } else {
+          state.qzIndex++;
+          state.qzAnswered = false;
+          state.qzSelected = null;
+        }
+        renderQuiz();
+      });
+    }
+
+    $("#qz-restart").addEventListener("click", () => {
+      resetQuiz(true);
+      renderQuiz();
+    });
+  }
+
+  /* ── Escape ── */
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  /* ── View switching ── */
+  function setView(view) {
+    state.view = view;
+    $$(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+    $$(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
+    renderCurrent();
+  }
+
+  function renderCurrent() {
+    renderChips();
+    if (state.view === "concepts") renderConcepts();
+    else if (state.view === "flashcards") renderFlashcards();
+    else if (state.view === "quiz") renderQuiz();
+  }
+
+  function onTopicChange(topicId) {
+    state.topicFilter = topicId;
+    if (state.view === "flashcards") resetFlashcards(false);
+    if (state.view === "quiz") resetQuiz(true);
+    renderCurrent();
+  }
+
+  /* ── Boot ── */
+  function init() {
+    const app = $("#app");
+    if (!app) return;
+
+    const knownTotal = data.flashcards.filter((c) => isKnown(c.id)).length;
+    $("#header-meta").textContent = `${data.flashcards.length} cards · ${data.quiz.length} questions · ${knownTotal} known`;
+
+    $$(".nav-btn").forEach((btn) => {
+      btn.addEventListener("click", () => setView(btn.dataset.view));
+    });
+
+    $("#filters").addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (chip) onTopicChange(chip.dataset.topic);
+    });
+
+    resetFlashcards(false);
+    resetQuiz(true);
+    setView("concepts");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+    </script>
+  </body>
+</html>
